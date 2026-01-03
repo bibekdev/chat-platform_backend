@@ -1,0 +1,22 @@
+services:
+  redis:
+    image: redis:7.4.3-alpine3.21
+    container_name: chat_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chat-network
+
+volumes:
+  redis_data:
+
+networks:
+  chat-network:
+    driver: bridge
