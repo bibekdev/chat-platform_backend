@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { SessionCacheKeys, SessionCacheTTL } from '@/common/constants/redis.constants';
-import { CachedUserRefreshToken, CachedUserSession } from '@/common/types/redis.types';
 import { RedisService } from './redis.service';
+import { CachedUserRefreshToken, CachedUserSession } from './types';
 
 @Injectable()
 export class SessionCacheService {
@@ -18,12 +18,7 @@ export class SessionCacheService {
     const key = SessionCacheKeys.USER_SESSION(userId);
     const ttl = this.parseExpiresIn(SessionCacheTTL.USER_SESSION);
 
-    const data: CachedUserSession = {
-      ...userData,
-      cachedAt: Date.now(),
-    };
-
-    const success = await this.redisService.setJson(key, data, ttl);
+    const success = await this.redisService.setJson(key, userData, ttl);
     if (success) {
       this.logger.log(`User session cached successfully for user ${userId}`);
     }
@@ -40,11 +35,10 @@ export class SessionCacheService {
     this.logger.log(`User session invalidated successfully for user ${userId}`);
   }
 
-  async cacheRefreshToken(tokenData: CachedUserRefreshToken) {
+  async cacheRefreshToken(tokenData: CachedUserRefreshToken, ttlSeconds: number) {
     const key = SessionCacheKeys.REFRESH_TOKEN(tokenData.tokenHash);
-    const ttl = this.parseExpiresIn(SessionCacheTTL.REFRESH_TOKEN);
 
-    await this.redisService.setJson(key, tokenData, ttl);
+    await this.redisService.setJson(key, tokenData, ttlSeconds);
 
     await this.addTokenToUserSet(tokenData.userId, tokenData.tokenHash);
 

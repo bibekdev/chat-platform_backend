@@ -12,6 +12,11 @@ export const insertUserSchema = createInsertSchema(schemas.users, {
   id: true,
   createdAt: true,
   updatedAt: true,
+  avatar: true,
 });
 
-export const updateUserSchema = createUpdateSchema(schemas.users);
+export const updateUserSchema = createUpdateSchema(schemas.users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});

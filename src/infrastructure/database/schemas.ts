@@ -6,8 +6,10 @@ export const users = pgTable(
     id: text('id').primaryKey().notNull(),
     name: varchar('name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).notNull().unique(),
-    avatar: text('avatar'),
+    avatar: text('avatar').notNull(),
     password: varchar('password', { length: 255 }).notNull(),
+    lastLoggedInAt: timestamp('last_logged_in_at', { withTimezone: true }),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

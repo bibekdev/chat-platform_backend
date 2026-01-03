@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
-import { DATABASE_CONNECTION, DATABASE_POOL } from '@/common/constants/db.constants';
-import { DrizzleDB } from './types';
+import { DATABASE_CONNECTION, DATABASE_POOL } from '@/infrastructure/database/constants';
+import { DrizzleDB } from '@/infrastructure/database/types';
 
 @Global()
 @Module({

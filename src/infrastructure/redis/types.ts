@@ -2,6 +2,7 @@ export type CachedUserSession = {
   id: string;
   email: string;
   name: string;
+  avatar: string | undefined;
   cachedAt: number;
 };
 
