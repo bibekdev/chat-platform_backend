@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { SessionCacheKeys, SessionCacheTTL } from '@/common/constants/redis.constants';
+import { SessionCacheKeys } from './constants';
 import { RedisService } from './redis.service';
 import { CachedUserRefreshToken, CachedUserSession } from './types';
 
@@ -9,14 +9,25 @@ import { CachedUserRefreshToken, CachedUserSession } from './types';
 export class SessionCacheService {
   private readonly logger = new Logger(SessionCacheService.name);
 
+  private readonly userSessionTTL: number;
+  private readonly refreshTokenTTL: number;
+
   constructor(
     private readonly redisService: RedisService,
     private readonly configService: ConfigService
-  ) {}
+  ) {
+    this.userSessionTTL = this.parseExpiresIn(
+      this.configService.getOrThrow('JWT_ACCESS_EXPIRES_IN')
+    );
+
+    this.refreshTokenTTL = this.parseExpiresIn(
+      this.configService.getOrThrow('JWT_REFRESH_EXPIRES_IN')
+    );
+  }
 
   async cacheUserSession(userId: string, userData: CachedUserSession): Promise<void> {
     const key = SessionCacheKeys.USER_SESSION(userId);
-    const ttl = this.parseExpiresIn(SessionCacheTTL.USER_SESSION);
+    const ttl = this.userSessionTTL;
 
     const success = await this.redisService.setJson(key, userData, ttl);
     if (success) {
@@ -72,7 +83,7 @@ export class SessionCacheService {
 
   async markTokenAsRevoked(tokenHash: string): Promise<void> {
     const key = SessionCacheKeys.REFRESH_TOKEN(tokenHash);
-    const ttl = this.parseExpiresIn(SessionCacheTTL.REFRESH_TOKEN);
+    const ttl = this.refreshTokenTTL;
     // Keep revoked token markers for the refresh token TTL
     await this.redisService.set(key, '1', ttl);
 
@@ -94,7 +105,7 @@ export class SessionCacheService {
   private async addTokenToFamilySet(family: string, tokenHash: string): Promise<void> {
     const key = SessionCacheKeys.TOKEN_FAMILY(family);
     await this.redisService.sadd(key, tokenHash);
-    await this.redisService.expire(key, this.parseExpiresIn(SessionCacheTTL.REFRESH_TOKEN));
+    await this.redisService.expire(key, this.refreshTokenTTL);
   }
 
   private async removeTokenFromFamilySet(family: string, tokenHash: string): Promise<void> {
@@ -120,7 +131,7 @@ export class SessionCacheService {
   private async addTokenToUserSet(userId: string, tokenHash: string): Promise<void> {
     const key = SessionCacheKeys.USER_TOKENS(userId);
     await this.redisService.sadd(key, tokenHash);
-    await this.redisService.expire(key, this.parseExpiresIn(SessionCacheTTL.REFRESH_TOKEN));
+    await this.redisService.expire(key, this.refreshTokenTTL);
   }
 
   private async removeTokenFromUserSet(userId: string, tokenHash: string): Promise<void> {

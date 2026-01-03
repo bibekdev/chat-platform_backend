@@ -2,7 +2,7 @@ import { Global, Inject, Logger, Module, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
-import { REDIS_CLIENT } from '@/common/constants/redis.constants';
+import { REDIS_CLIENT } from './constants';
 import { RedisService } from './redis.service';
 import { SessionCacheService } from './session-cache.service';
 
