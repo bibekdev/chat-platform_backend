@@ -11,6 +11,8 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string(),
   JWT_ACCESS_SECRET: z.string(),
   JWT_ACCESS_EXPIRES_IN: z.string(),
+  HOST: z.string(),
+  ALLOWED_ORIGINS: z.string(),
 });
 
 export const validateEnv = (config: NodeJS.ProcessEnv) => {

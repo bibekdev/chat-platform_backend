@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import bcrypt from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 
 import { User } from '@/infrastructure/database/types';
 import { SessionCacheService } from '@/infrastructure/redis/session-cache.service';
@@ -15,7 +15,7 @@ import { CachedUserSession } from '@/infrastructure/redis/types';
 import { UsersService } from '../users/users.service';
 import { LoginDto, RegisterDto } from './dtos/auth.dto';
 import { TokenService } from './token.service';
-import { JwtPayload, RefreshTokenPayload, TokenPair } from './types';
+import { AuthenticatedUser, JwtPayload, RefreshTokenPayload, TokenPair } from './types';
 
 @Injectable()
 export class AuthService {
@@ -132,28 +132,38 @@ export class AuthService {
     this.logger.log(`All tokens revoked for user: ${userId}`);
   }
 
-  async validateUser(payload: JwtPayload): Promise<User | null> {
+  async validateUser(payload: JwtPayload): Promise<AuthenticatedUser | null> {
     if (payload.type !== 'access') {
       return null;
     }
 
+    // Check cache first
     const cachedSession = await this.sessionCacheService.getUserSession(payload.sub);
     if (cachedSession) {
-      this.logger.log(`User session found in cache for: ${payload.sub}`);
-      // Return cached data as User-like object (for request context)
-      return cachedSession as unknown as User;
+      this.logger.debug(`User session cache hit for: ${payload.sub}`);
+      return {
+        id: cachedSession.id,
+        email: cachedSession.email,
+        name: cachedSession.name,
+        avatar: cachedSession.avatar,
+      };
     }
 
     // Cache miss - fetch from database
-
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
       return null;
     }
 
+    // Cache for future requests
     await this.cacheUserSession(user);
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar ?? undefined,
+    };
   }
 
   private async cacheUserSession(user: User): Promise<void> {
@@ -223,11 +233,11 @@ export class AuthService {
   }
 
   private async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, this.BCRYPT_ROUNDS);
+    return hash(password, this.BCRYPT_ROUNDS);
   }
 
   private async verifyPassword(password: string, passwordHash: string): Promise<boolean> {
-    return bcrypt.compare(password, passwordHash);
+    return compare(password, passwordHash);
   }
 
   private formatTokenResponse(tokens: TokenPair) {

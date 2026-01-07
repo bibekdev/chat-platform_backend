@@ -1,4 +1,4 @@
-import crypto from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, desc, eq, gt, lt } from 'drizzle-orm';
 
@@ -18,15 +18,15 @@ export class TokenService {
   ) {}
 
   hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex');
+    return createHash('sha256').update(token).digest('hex');
   }
 
   generateSecureToken(): string {
-    return crypto.randomBytes(32).toString('hex');
+    return randomBytes(32).toString('hex');
   }
 
   generateFamily(): string {
-    return crypto.randomUUID();
+    return randomUUID();
   }
 
   async createRefreshToken(data: {
@@ -72,13 +72,14 @@ export class TokenService {
   }
 
   async findByTokenHash(tokenHash: string): Promise<RefreshToken | null> {
+    // Check if token is explicitly revoked first
     const isRevoked = await this.sessionCacheService.isTokenRevoked(tokenHash);
     if (isRevoked) {
       this.logger.debug(`Token revoked (cache hit): ${tokenHash.substring(0, 8)}...`);
       return null;
     }
 
-    // Check cache for token data
+    // Check cache for valid token data
     const cachedToken = await this.sessionCacheService.getCachedRefreshToken(tokenHash);
     if (cachedToken) {
       if (cachedToken.isRevoked) {
@@ -92,8 +93,22 @@ export class TokenService {
       }
 
       this.logger.debug(`Token cache hit: ${tokenHash.substring(0, 8)}...`);
+
+      // Return cached data as RefreshToken (without hitting database)
+      return {
+        id: cachedToken.id,
+        tokenHash: cachedToken.tokenHash,
+        userId: cachedToken.userId,
+        family: cachedToken.family,
+        expiresAt: new Date(cachedToken.expiresAt),
+        isRevoked: cachedToken.isRevoked,
+        createdAt: new Date(), // Not stored in cache, but not typically needed
+        userAgent: null, // Not stored in cache
+        ipAddress: null, // Not stored in cache
+      };
     }
 
+    // Cache miss - query database
     const [token] = await this.db
       .select()
       .from(refreshTokens)
@@ -106,7 +121,8 @@ export class TokenService {
       )
       .limit(1);
 
-    if (token && !cachedToken) {
+    if (token) {
+      // Cache for future lookups
       const ttlSeconds = Math.floor((token.expiresAt.getTime() - Date.now()) / 1000);
       if (ttlSeconds > 0) {
         await this.sessionCacheService.cacheRefreshToken(
@@ -122,7 +138,8 @@ export class TokenService {
         );
       }
     }
-    return token;
+
+    return token ?? null;
   }
 
   async findByToken(token: string): Promise<RefreshToken | null> {
@@ -189,11 +206,17 @@ export class TokenService {
     return result.rowCount ?? 0;
   }
 
-  async getUserSession(userId: string): Promise<RefreshToken[]> {
+  async getUserActiveSessions(userId: string): Promise<RefreshToken[]> {
     return this.db
       .select()
       .from(refreshTokens)
-      .where(eq(refreshTokens.userId, userId))
+      .where(
+        and(
+          eq(refreshTokens.userId, userId),
+          eq(refreshTokens.isRevoked, false),
+          gt(refreshTokens.expiresAt, new Date())
+        )
+      )
       .orderBy(desc(refreshTokens.createdAt));
   }
 

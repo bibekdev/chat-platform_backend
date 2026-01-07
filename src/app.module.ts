@@ -5,13 +5,14 @@ import { validateEnv } from './config/env.config';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnv,
-      envFilePath: ['.env', '.env.local', '.env.prod'],
+      envFilePath: ['.env'],
     }),
 
     // Infrastructure
@@ -20,6 +21,7 @@ import { AuthModule } from './modules/auth/auth.module';
 
     // Modules
     AuthModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [],

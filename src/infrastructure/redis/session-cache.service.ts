@@ -82,24 +82,31 @@ export class SessionCacheService {
   }
 
   async markTokenAsRevoked(tokenHash: string): Promise<void> {
-    const key = SessionCacheKeys.REFRESH_TOKEN(tokenHash);
+    const tokenKey = SessionCacheKeys.REFRESH_TOKEN(tokenHash);
+    const revokedKey = SessionCacheKeys.REVOKED_TOKEN(tokenHash);
     const ttl = this.refreshTokenTTL;
-    // Keep revoked token markers for the refresh token TTL
-    await this.redisService.set(key, '1', ttl);
 
-    // Update the cached token data if exists
+    // Get token data before removing it
     const tokenData = await this.getCachedRefreshToken(tokenHash);
+
+    // Add to revoked tokens set (separate key to track revocations)
+    await this.redisService.set(revokedKey, '1', ttl);
+
+    // Remove the cached token data
+    await this.redisService.del(tokenKey);
+
+    // Clean up user and family sets if we had token data
     if (tokenData) {
-      tokenData.isRevoked = true;
-      await this.redisService.setJson(key, tokenData, ttl);
+      await this.removeTokenFromUserSet(tokenData.userId, tokenHash);
+      await this.removeTokenFromFamilySet(tokenData.family, tokenHash);
     }
 
     this.logger.log(`Token ${tokenHash.substring(0, 8)}... marked as revoked`);
   }
 
   async isTokenRevoked(tokenHash: string): Promise<boolean> {
-    const key = SessionCacheKeys.REFRESH_TOKEN(tokenHash);
-    return this.redisService.exists(key);
+    const revokedKey = SessionCacheKeys.REVOKED_TOKEN(tokenHash);
+    return this.redisService.exists(revokedKey);
   }
 
   private async addTokenToFamilySet(family: string, tokenHash: string): Promise<void> {
