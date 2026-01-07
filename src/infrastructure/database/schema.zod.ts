@@ -20,3 +20,13 @@ export const updateUserSchema = createUpdateSchema(schemas.users).omit({
   createdAt: true,
   updatedAt: true,
 });
+
+export const insertFriendRequestSchema = createInsertSchema(schemas.friendRequests, {
+  receiverId: z.string().min(1, { message: 'Receiver ID is required' }),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  status: true,
+  senderId: true,
+});
