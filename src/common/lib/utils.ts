@@ -1,7 +1,8 @@
-import { ulid } from 'ulid';
+import { randomBytes } from 'node:crypto';
 
 export const generateUniqueId = (prefix: string): string => {
-  return `${prefix}_${ulid()}`;
+  const randomHex = randomBytes(14).toString('hex');
+  return `${prefix}_${randomHex}`;
 };
 
 const profileImageNameList: string[] = [
