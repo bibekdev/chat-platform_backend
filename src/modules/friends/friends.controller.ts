@@ -10,11 +10,10 @@ import {
   Query,
 } from '@nestjs/common';
 
-import { User } from '@/infrastructure/database/types';
+import { CursorPaginationQueryDto } from '@/common/lib/pagination';
 import { AuthUser } from '@/modules/auth/decorators/auth-user.decorator';
 import { AuthenticatedUser } from '../auth/types';
 import {
-  CursorPaginationQueryDto,
   FriendIdParamDto,
   FriendRequestIdParamDto,
   SendFriendRequestDto,
@@ -56,6 +55,13 @@ export class FriendsController {
     return this.friendsService.getIncomingFriendRequests(user.id, query);
   }
 
+  @Get('requests/incoming/count')
+  @HttpCode(HttpStatus.OK)
+  async getIncomingFriendRequestsCount(@AuthUser() user: AuthenticatedUser) {
+    const count = await this.friendsService.getIncomingFriendRequestsCount(user.id);
+    return { count };
+  }
+
   @Get('requests/outgoing')
   @HttpCode(HttpStatus.OK)
   async getOutgoingFriendRequests(
@@ -85,7 +91,7 @@ export class FriendsController {
     return { message: 'Friend request rejected' };
   }
 
-  @Delete('requests/:requestId')
+  @Delete('requests/:requestId/cancel')
   @HttpCode(HttpStatus.OK)
   async cancelFriendRequest(
     @AuthUser() user: AuthenticatedUser,

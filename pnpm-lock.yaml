@@ -34,7 +34,7 @@ importers:
         version: 0.45.1(@types/pg@8.16.0)(pg@8.16.3)
       drizzle-zod:
         specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.45.1(@types/pg@8.16.0)(pg@8.16.3))(zod@4.3.4)
+        version: 0.8.3(drizzle-orm@0.45.1(@types/pg@8.16.0)(pg@8.16.3))(zod@4.3.5)
       helmet:
         specifier: ^8.1.0
         version: 8.1.0
@@ -43,7 +43,7 @@ importers:
         version: 5.8.2
       nestjs-zod:
         specifier: ^5.0.1
-        version: 5.0.1(@nestjs/common@11.1.11(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)(zod@4.3.4)
+        version: 5.0.1(@nestjs/common@11.1.11(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)(zod@4.3.5)
       pg:
         specifier: ^8.16.3
         version: 8.16.3
@@ -53,12 +53,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
-      ulid:
-        specifier: ^3.0.2
-        version: 3.0.2
       zod:
-        specifier: ^4.3.4
-        version: 4.3.4
+        specifier: ^4.3.5
+        version: 4.3.5
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -3849,10 +3846,6 @@ packages:
     resolution: {integrity: sha512-rvKSBiC5zqCCiDZ9kAOszZcDvdAHwwIKJG33Ykj43OKcWsnmcBRL09YTU4nOeHZ8Y2a7l1MgTd08SBe9A8Qj6A==}
     engines: {node: '>=18'}
 
-  ulid@3.0.2:
-    resolution: {integrity: sha512-yu26mwteFYzBAot7KVMqFGCVpsF6g8wXfJzQUHvu1no3+rRRSFcSV2nKeYvNPLD2J4b08jYBDhHUjeH0ygIl9w==}
-    hasBin: true
-
   unbzip2-stream@1.4.3:
     resolution: {integrity: sha512-mlExGW4w71ebDJviH16lQLtZS32VKqsSfk80GCfUlwT/4/hNRFsoscrF/c++9xinkMzECL1uL9DDwXqFWkruPg==}
 
@@ -3980,8 +3973,8 @@ packages:
     resolution: {integrity: sha512-U/PBtDf35ff0D8X8D0jfdzHYEPFxAI7jJlxZXwCSez5M3190m+QobIfh+sWDWSHMCWWJN2AWamkegn6vr6YBTw==}
     engines: {node: '>=18'}
 
-  zod@4.3.4:
-    resolution: {integrity: sha512-Zw/uYiiyF6pUT1qmKbZziChgNPRu+ZRneAsMUDU6IwmXdWt5JwcUfy2bvLOCUtz5UniaN/Zx5aFttZYbYc7O/A==}
+  zod@4.3.5:
+    resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
 
 snapshots:
 
@@ -5990,10 +5983,10 @@ snapshots:
       '@types/pg': 8.16.0
       pg: 8.16.3
 
-  drizzle-zod@0.8.3(drizzle-orm@0.45.1(@types/pg@8.16.0)(pg@8.16.3))(zod@4.3.4):
+  drizzle-zod@0.8.3(drizzle-orm@0.45.1(@types/pg@8.16.0)(pg@8.16.3))(zod@4.3.5):
     dependencies:
       drizzle-orm: 0.45.1(@types/pg@8.16.0)(pg@8.16.3)
-      zod: 4.3.4
+      zod: 4.3.5
 
   dunder-proto@1.0.1:
     dependencies:
@@ -7201,12 +7194,12 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  nestjs-zod@5.0.1(@nestjs/common@11.1.11(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)(zod@4.3.4):
+  nestjs-zod@5.0.1(@nestjs/common@11.1.11(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)(zod@4.3.5):
     dependencies:
       '@nestjs/common': 11.1.11(reflect-metadata@0.2.2)(rxjs@7.8.2)
       deepmerge: 4.3.1
       rxjs: 7.8.2
-      zod: 4.3.4
+      zod: 4.3.5
 
   node-abort-controller@3.1.1: {}
 
@@ -7910,8 +7903,6 @@ snapshots:
 
   uint8array-extras@1.5.0: {}
 
-  ulid@3.0.2: {}
-
   unbzip2-stream@1.4.3:
     dependencies:
       buffer: 5.7.1
@@ -8050,4 +8041,4 @@ snapshots:
 
   yoctocolors-cjs@2.1.3: {}
 
-  zod@4.3.4: {}
+  zod@4.3.5: {}

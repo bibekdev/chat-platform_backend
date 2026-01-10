@@ -6,7 +6,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, or } from 'drizzle-orm';
+import { and, count, eq, or } from 'drizzle-orm';
 
 import {
   buildCursorCondition,
@@ -18,8 +18,14 @@ import {
 } from '@/common/lib/pagination';
 import { generateUniqueId } from '@/common/lib/utils';
 import { DATABASE_CONNECTION } from '@/infrastructure/database/constants';
-import { friendRequests, friends } from '@/infrastructure/database/schemas';
-import { DrizzleDB, Friend, FriendRequest } from '@/infrastructure/database/types';
+import { friendRequests, friends, users } from '@/infrastructure/database/schemas';
+import {
+  DrizzleDB,
+  Friend,
+  FriendRequest,
+  FriendRequestWithReceiver,
+  FriendRequestWithSender,
+} from '@/infrastructure/database/types';
 
 @Injectable()
 export class FriendsService {
@@ -133,10 +139,19 @@ export class FriendsService {
     await this.db.delete(friendRequests).where(eq(friendRequests.id, requestId));
   }
 
+  async getIncomingFriendRequestsCount(userId: string): Promise<number> {
+    const [result] = await this.db
+      .select({ count: count() })
+      .from(friendRequests)
+      .where(and(eq(friendRequests.receiverId, userId), eq(friendRequests.status, 'pending')));
+
+    return result?.count ?? 0;
+  }
+
   async getIncomingFriendRequests(
     userId: string,
     pagination: PaginationConfig
-  ): Promise<PaginatedResponse<FriendRequest>> {
+  ): Promise<PaginatedResponse<FriendRequestWithSender>> {
     const sortDirection = getSortDirection(pagination.direction);
     const cursorCondition = buildCursorCondition(
       pagination,
@@ -152,15 +167,29 @@ export class FriendsService {
       conditions.push(cursorCondition);
     }
 
-    const items = await this.db
-      .select()
+    const rows = await this.db
+      .select({
+        id: friendRequests.id,
+        senderId: friendRequests.senderId,
+        receiverId: friendRequests.receiverId,
+        status: friendRequests.status,
+        createdAt: friendRequests.createdAt,
+        updatedAt: friendRequests.updatedAt,
+        sender: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          avatar: users.avatar,
+        },
+      })
       .from(friendRequests)
+      .innerJoin(users, eq(friendRequests.senderId, users.id))
       .where(and(...conditions))
       .orderBy(sortDirection(friendRequests.createdAt), sortDirection(friendRequests.id))
       .limit(getPaginationLimit(pagination));
 
     return createPaginatedResponse(
-      items,
+      rows,
       pagination,
       item => item.createdAt,
       item => item.id
@@ -170,7 +199,7 @@ export class FriendsService {
   async getOutgoingFriendRequests(
     userId: string,
     pagination: PaginationConfig
-  ): Promise<PaginatedResponse<FriendRequest>> {
+  ): Promise<PaginatedResponse<FriendRequestWithReceiver>> {
     const sortDirection = getSortDirection(pagination.direction);
     const cursorCondition = buildCursorCondition(
       pagination,
@@ -183,15 +212,29 @@ export class FriendsService {
       conditions.push(cursorCondition);
     }
 
-    const items = await this.db
-      .select()
+    const rows = await this.db
+      .select({
+        id: friendRequests.id,
+        senderId: friendRequests.senderId,
+        receiverId: friendRequests.receiverId,
+        status: friendRequests.status,
+        createdAt: friendRequests.createdAt,
+        updatedAt: friendRequests.updatedAt,
+        receiver: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          avatar: users.avatar,
+        },
+      })
       .from(friendRequests)
+      .innerJoin(users, eq(friendRequests.receiverId, users.id))
       .where(and(...conditions))
       .orderBy(sortDirection(friendRequests.createdAt), sortDirection(friendRequests.id))
       .limit(getPaginationLimit(pagination));
 
     return createPaginatedResponse(
-      items,
+      rows,
       pagination,
       item => item.createdAt,
       item => item.id

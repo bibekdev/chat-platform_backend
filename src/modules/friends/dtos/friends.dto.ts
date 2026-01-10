@@ -17,5 +17,3 @@ export class FriendIdParamDto extends createZodDto(
     friendId: z.string().min(1, { message: 'Friend ID is required' }),
   })
 ) {}
-
-export class CursorPaginationQueryDto extends createZodDto(cursorPaginationQuerySchema) {}

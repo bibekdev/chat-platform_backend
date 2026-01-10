@@ -1,5 +1,6 @@
 import { and, asc, desc, gt, lt, or, SQL } from 'drizzle-orm';
 import { PgColumn } from 'drizzle-orm/pg-core';
+import { createZodDto } from 'nestjs-zod';
 import z from 'zod';
 
 // ==================== SCHEMAS ====================
@@ -203,3 +204,5 @@ export function createPaginatedResponse<T>(
 export function getPaginationLimit(config: PaginationConfig): number {
   return config.limit + 1;
 }
+
+export class CursorPaginationQueryDto extends createZodDto(cursorPaginationQuerySchema) {}

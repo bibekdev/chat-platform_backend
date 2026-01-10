@@ -6,40 +6,39 @@ export const generateUniqueId = (prefix: string): string => {
 };
 
 const profileImageNameList: string[] = [
-  'Jasper',
-  'Nala',
-  'Sammy',
-  'Harley',
-  'Lucy',
-  'Bob',
-  'Snuggles',
-  'Patches',
-  'Tiger',
-  'Smokey',
-  'Leo',
-  'Snickers',
-  'Oliver',
-  'Annie',
-  'Socks',
-  'Coco',
-  'Buddy',
-  'Chloe',
-  'Callie',
-  'Buster',
+  'Kimberly',
+  'Easton',
+  'Caleb',
+  'Robert',
+  'Jack',
+  'Sawyer',
+  'Katherine',
+  'Mason',
+  'Leah',
+  'Jocelyn',
+  'Jessica',
+  'Kingston',
+  'Sophia',
+  'Liliana',
+  'Jade',
+  'Riley',
+  'George',
+  'Adrian',
+  'Jameson',
+  'Emergy',
 ];
 
 const profileImageCollectionList: string[] = [
-  'adventurer-neutral',
-  'fun-emoji',
-  'lorelei-neutral',
-  'avataaars-neutral',
-  'big-ears-neutral',
-  'bottts-neutral',
-  'notionists-neutral',
-  'pixel-art-neutral',
+  'avataaars',
+  'lorelei',
+  'micah',
+  'personas',
+  'open-peeps',
+  'miniavs',
+  'notionists',
 ];
 
 export const generateRandomAvatar = () => `
-https://api.dicebear.com/6.x/${profileImageCollectionList[Math.floor(Math.random() * profileImageCollectionList.length)]}/svg?seed=
+https://api.dicebear.com/9.x/${profileImageCollectionList[Math.floor(Math.random() * profileImageCollectionList.length)]}/svg?seed=
 ${profileImageNameList[Math.floor(Math.random() * profileImageNameList.length)]}
 `;

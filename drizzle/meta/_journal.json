@@ -15,6 +15,20 @@
       "when": 1767447004907,
       "tag": "0001_lucky_leech",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767854216580,
+      "tag": "0002_unusual_king_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1768055028617,
+      "tag": "0003_sleepy_santa_claus",
+      "breakpoints": true
     }
   ]
 }
