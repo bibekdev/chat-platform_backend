@@ -5,6 +5,7 @@ import Redis from 'ioredis';
 import { REDIS_CLIENT } from './constants';
 import { RedisService } from './redis.service';
 import { SessionCacheService } from './session-cache.service';
+import { SocketCacheService } from './socket-cache.service';
 
 @Global()
 @Module({
@@ -54,8 +55,9 @@ import { SessionCacheService } from './session-cache.service';
     },
     RedisService,
     SessionCacheService,
+    SocketCacheService,
   ],
-  exports: [REDIS_CLIENT, RedisService, SessionCacheService],
+  exports: [REDIS_CLIENT, RedisService, SessionCacheService, SocketCacheService],
 })
 export class RedisModule implements OnModuleDestroy {
   private readonly logger = new Logger(RedisModule.name);

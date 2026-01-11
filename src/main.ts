@@ -8,11 +8,16 @@ import { AppModule } from './app.module';
 import { GlobalZodValidationPipe } from './common/pipes/global-zod-validation.pipe';
 import { corsConfig } from './config/cors.config';
 import { helmetSecurityConfigOptions } from './config/helmet.config';
+import { WebsocketsAdapter } from './infrastructure/websockets/websockets.adapter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+
+  const websocketsAdapter = new WebsocketsAdapter(app, configService);
+  await websocketsAdapter.connectToRedis();
+  app.useWebSocketAdapter(websocketsAdapter);
 
   app.enableCors(corsConfig);
   app.use(helmet(helmetSecurityConfigOptions));

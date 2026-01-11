@@ -14,3 +14,9 @@ export type CachedUserRefreshToken = {
   expiresAt: string;
   isRevoked: boolean;
 };
+
+export type UserPresence = {
+  userId: string;
+  status: 'online' | 'away' | 'busy' | 'offline';
+  lastSeen: number;
+};

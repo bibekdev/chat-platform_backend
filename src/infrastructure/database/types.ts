@@ -18,6 +18,7 @@ export type Friend = typeof schemas.friends.$inferSelect;
 export type PublicUser = Pick<User, 'id' | 'name' | 'email' | 'avatar'>;
 export type FriendRequestWithSender = FriendRequest & { sender: PublicUser };
 export type FriendRequestWithReceiver = FriendRequest & { receiver: PublicUser };
+export type FriendWithUser = Friend & { friend: PublicUser };
 
 export type Conversation = typeof schemas.conversations.$inferSelect;
 export type ConversationMember = typeof schemas.conversationMembers.$inferSelect;

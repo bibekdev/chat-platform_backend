@@ -25,6 +25,7 @@ import {
   FriendRequest,
   FriendRequestWithReceiver,
   FriendRequestWithSender,
+  FriendWithUser,
 } from '@/infrastructure/database/types';
 
 @Injectable()
@@ -273,7 +274,7 @@ export class FriendsService {
   async getFriends(
     userId: string,
     pagination: PaginationConfig
-  ): Promise<PaginatedResponse<Friend>> {
+  ): Promise<PaginatedResponse<FriendWithUser>> {
     const sortDirection = getSortDirection(pagination.direction);
     const cursorCondition = buildCursorCondition(pagination, friends.createdAt, friends.id);
 
@@ -282,15 +283,27 @@ export class FriendsService {
       conditions.push(cursorCondition);
     }
 
-    const items = await this.db
-      .select()
+    const rows = await this.db
+      .select({
+        id: friends.id,
+        userId: friends.userId,
+        friendId: friends.friendId,
+        createdAt: friends.createdAt,
+        friend: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          avatar: users.avatar,
+        },
+      })
       .from(friends)
+      .innerJoin(users, eq(friends.friendId, users.id))
       .where(and(...conditions))
       .orderBy(sortDirection(friends.createdAt), sortDirection(friends.id))
       .limit(getPaginationLimit(pagination));
 
     return createPaginatedResponse(
-      items,
+      rows,
       pagination,
       item => item.createdAt,
       item => item.id
