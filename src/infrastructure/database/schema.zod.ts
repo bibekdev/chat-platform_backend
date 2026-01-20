@@ -30,3 +30,30 @@ export const insertFriendRequestSchema = createInsertSchema(schemas.friendReques
   status: true,
   senderId: true,
 });
+
+export const insertConversationSchema = createInsertSchema(schemas.conversations, {
+  name: z.string().optional(),
+  description: z.string().optional(),
+  avatarUrl: z.string().optional(),
+  type: z.enum(['direct', 'group']),
+})
+  .extend({
+    memberIds: z.array(z.string()).min(2, { message: 'At least 2 members are required' }),
+  })
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    createdBy: true,
+  });
+
+export const updateConversationSchema = createUpdateSchema(schemas.conversations, {
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(500).optional().nullable(),
+  avatarUrl: z.string().url().optional().nullable(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  createdBy: true,
+});
