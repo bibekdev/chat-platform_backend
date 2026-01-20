@@ -39,3 +39,11 @@ export const updateMemberRoleSchema = z.object({
 });
 
 export class UpdateMemberRoleDto extends createZodDto(updateMemberRoleSchema) {}
+
+export const conversationIdParamSchema = z.object({ conversationId: z.string().min(1).max(50) });
+
+export class ConversationIdParamDto extends createZodDto(conversationIdParamSchema) {}
+
+export class ConversationWithMemberIdParamDto extends createZodDto(
+  conversationIdParamSchema.extend({ memberId: z.string().min(1).max(50) })
+) {}

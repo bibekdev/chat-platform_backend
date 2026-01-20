@@ -17,6 +17,8 @@ import { AuthUser } from '../auth/decorators/auth-user.decorator';
 import { ConversationsService } from './conversations.service';
 import {
   AddMembersDto,
+  ConversationIdParamDto,
+  ConversationWithMemberIdParamDto,
   CreateConversationDto,
   UpdateConversationDto,
   UpdateMemberRoleDto,
@@ -41,96 +43,87 @@ export class ConversationsController {
     return this.conversationsService.createConversation(userId, createConversationDto);
   }
 
-  @Get(':id')
+  @Get(':conversationId')
   @HttpCode(HttpStatus.OK)
-  async getConversation(@AuthUser('id') userId: string, @Param('id') conversationId: string) {
-    return this.conversationsService.getConversationWithMembers(conversationId, userId);
+  async getConversation(@AuthUser('id') userId: string, @Param() params: ConversationIdParamDto) {
+    return this.conversationsService.getConversationWithMembers(params.conversationId, userId);
   }
 
-  @Get(':id/details')
+  @Get(':conversationId/details')
   @HttpCode(HttpStatus.OK)
   async getConversationDetails(
     @AuthUser('id') userId: string,
-    @Param('id') conversationId: string
+    @Param() params: ConversationIdParamDto
   ) {
-    return this.conversationsService.getConversationWithDetails(conversationId, userId);
+    return this.conversationsService.getConversationWithDetails(params.conversationId, userId);
   }
 
-  @Put(':id')
+  @Put(':conversationId')
   @HttpCode(HttpStatus.OK)
   async updateConversation(
     @AuthUser('id') userId: string,
-    @Param('id') conversationId: string,
+    @Param() params: ConversationIdParamDto,
     @Body() updateConversationDto: UpdateConversationDto
   ) {
     return this.conversationsService.updateConversation(
-      conversationId,
+      params.conversationId,
       userId,
       updateConversationDto
     );
   }
 
-  @Delete(':id')
+  @Delete(':conversationId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteConversation(@AuthUser('id') userId: string, @Param('id') conversationId: string) {
-    return this.conversationsService.deleteConversation(conversationId, userId);
+  async deleteConversation(
+    @AuthUser('id') userId: string,
+    @Param() params: ConversationIdParamDto
+  ) {
+    return this.conversationsService.deleteConversation(params.conversationId, userId);
   }
 
-  @Get(':id/members')
+  @Get(':conversationId/members')
   @HttpCode(HttpStatus.OK)
-  async getConversationMembers(@Param('id') conversationId: string) {
-    return this.conversationsService.getConversationMembers(conversationId);
+  async getConversationMembers(@Param() params: ConversationIdParamDto) {
+    return this.conversationsService.getConversationMembers(params.conversationId);
   }
 
-  @Post(':id/members')
+  @Post(':conversationId/members')
   @HttpCode(HttpStatus.CREATED)
   async addMembers(
     @AuthUser('id') userId: string,
-    @Param('id') conversationId: string,
+    @Param() params: ConversationIdParamDto,
     @Body() addMembersDto: AddMembersDto
   ) {
-    return this.conversationsService.addMembers(conversationId, userId, addMembersDto);
+    return this.conversationsService.addMembers(params.conversationId, userId, addMembersDto);
   }
 
-  @Delete(':id/members/:memberId')
+  @Delete(':conversationId/members/:memberId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeMember(
     @AuthUser('id') userId: string,
-    @Param('id') conversationId: string,
-    @Param('memberId') memberId: string
+    @Param() params: ConversationWithMemberIdParamDto
   ) {
-    return this.conversationsService.removeMember(conversationId, userId, memberId);
+    return this.conversationsService.removeMember(params.conversationId, userId, params.memberId);
   }
 
-  @Post(':id/leave')
+  @Post(':conversationId/leave')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async leaveConversation(@AuthUser('id') userId: string, @Param('id') conversationId: string) {
-    return this.conversationsService.leaveConversation(conversationId, userId);
+  async leaveConversation(@AuthUser('id') userId: string, @Param() params: ConversationIdParamDto) {
+    return this.conversationsService.leaveConversation(params.conversationId, userId);
   }
 
-  @Patch(':id/members/:memberId/role')
+  @Patch(':conversationId/members/:memberId/role')
   @HttpCode(HttpStatus.NO_CONTENT)
   async updateMemberRole(
     @AuthUser('id') userId: string,
-    @Param('id') conversationId: string,
-    @Param('memberId') memberId: string,
+    @Param() params: ConversationWithMemberIdParamDto,
     @Body() updateMemberRoleDto: UpdateMemberRoleDto
   ) {
     return this.conversationsService.updateMemberRole(
-      conversationId,
+      params.conversationId,
       userId,
-      memberId,
+      params.memberId,
       updateMemberRoleDto
     );
-  }
-
-  @Post(':id/read/:messageId')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async markAsRead(
-    @AuthUser('id') userId: string,
-    @Param('id') conversationId: string,
-    @Param('messageId') messageId: string
-  ) {
-    return this.conversationsService.markAsRead(conversationId, userId, messageId);
   }
 }
