@@ -145,7 +145,7 @@ export class AuthService {
         id: cachedSession.id,
         email: cachedSession.email,
         name: cachedSession.name,
-        avatar: cachedSession.avatar,
+        avatar: cachedSession.avatar as string,
       };
     }
 

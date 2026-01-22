@@ -1,16 +1,41 @@
 import { Socket } from 'socket.io';
 
 import { AuthenticatedUser } from '@/modules/auth/types';
+import { PublicUser } from '../database/types';
 
 export interface AuthenticatedSocket extends Socket {
   user: AuthenticatedUser;
 }
 
-export const WEBSOCKETS_EVENTS = {
-  // Friends related events
-  GET_ONLINE_USERS: 'getOnlineUsers',
+export const WEBSOCKET_EVENTS = {
+  // Connection Events
+  CONNECTION: 'connection',
+  DISCONNECT: 'disconnect',
 
-  // Chat related events
+  // Presence Events (server -> client)
+  USER_ONLINE: 'userOnline',
+  USER_OFFLINE: 'userOffline',
+  PRESENCE_UPDATED: 'presenceUpdated',
+  ONLINE_FRIENDS: 'onlineFriends',
+
+  // Error event
+  ERROR: 'error',
 } as const;
 
-export type WebsocketsEvents = (typeof WEBSOCKETS_EVENTS)[keyof typeof WEBSOCKETS_EVENTS];
+export type WebsocketEvent = (typeof WEBSOCKET_EVENTS)[keyof typeof WEBSOCKET_EVENTS];
+
+export interface UserOnlinePayload {
+  userId: string;
+  user: PublicUser;
+}
+
+export interface ErrorPayload {
+  event: string;
+  message: string;
+  code?: string;
+}
+
+export const getRoomName = {
+  conversation: (conversationId: string) => `conversation:${conversationId}`,
+  user: (userId: string) => `user:${userId}`,
+} as const;

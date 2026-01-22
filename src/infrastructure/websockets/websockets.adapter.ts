@@ -6,9 +6,8 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import Redis from 'ioredis';
 import { Server, ServerOptions, Socket } from 'socket.io';
 
-import { SocketCacheService } from '@/infrastructure/redis/socket-cache.service';
 import { AuthService } from '@/modules/auth/auth.service';
-import { AuthenticatedUser, JwtPayload } from '@/modules/auth/types';
+import { JwtPayload } from '@/modules/auth/types';
 import { AuthenticatedSocket } from './types';
 
 export class WebsocketsAdapter extends IoAdapter {
@@ -148,27 +147,6 @@ export class WebsocketsAdapter extends IoAdapter {
         );
         return next(new Error('Invalid or expired token'));
       }
-    });
-
-    const socketCacheService = this.app.get(SocketCacheService);
-
-    server.on('connection', async (socket: AuthenticatedSocket) => {
-      const userId = socket.user.id;
-
-      this.logger.log(`User ${userId} connected (socket: ${socket.id})`);
-
-      // Register socket in Redis cache
-      await socketCacheService.addUserSocket(userId, socket.id);
-
-      // Join user to their personal room for targeted messages
-      socket.join(`user:${userId}`);
-
-      socket.on('disconnect', async reason => {
-        this.logger.log(`User ${userId} disconnected (reason: ${reason})`);
-
-        // Remove socket from Redis cache
-        await socketCacheService.removeUserSocket(userId, socket.id);
-      });
     });
 
     return server;

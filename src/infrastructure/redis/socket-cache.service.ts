@@ -14,7 +14,7 @@ export class SocketCacheService {
   // CONNECTION MANAGEMENT
   // ============================================================================
 
-  /**
+  /*
    * Register a new socket connection for a user
    * A user can have multiple sockets (multiple tabs/devices)
    */
@@ -37,7 +37,7 @@ export class SocketCacheService {
     this.logger.debug(`Socket ${socketId} registered for user ${userId}`);
   }
 
-  /**
+  /*
    * Remove a socket connection for a user
    */
   async removeUserSocket(userId: string, socketId: string): Promise<void> {
@@ -63,7 +63,7 @@ export class SocketCacheService {
     this.logger.debug(`Socket ${socketId} removed for user ${userId}`);
   }
 
-  /**
+  /*
    * Remove all sockets for a user (e.g., on logout)
    */
   async removeAllUserSockets(userId: string): Promise<string[]> {
@@ -94,7 +94,7 @@ export class SocketCacheService {
   // SOCKET LOOKUPS
   // ============================================================================
 
-  /**
+  /*
    * Get all socket IDs for a user
    */
   async getUserSocketIds(userId: string): Promise<string[]> {
@@ -102,7 +102,7 @@ export class SocketCacheService {
     return this.redisService.smembers(key);
   }
 
-  /**
+  /*
    * Get user ID from socket ID
    */
   async getUserIdBySocketId(socketId: string): Promise<string | null> {
@@ -110,7 +110,7 @@ export class SocketCacheService {
     return this.redisService.get(key);
   }
 
-  /**
+  /*
    * Check if a user has any active sockets
    */
   async isUserConnected(userId: string): Promise<boolean> {
@@ -118,7 +118,7 @@ export class SocketCacheService {
     return sockets.length > 0;
   }
 
-  /**
+  /*
    * Get the number of active sockets for a user
    */
   async getUserSocketCount(userId: string): Promise<number> {
@@ -130,21 +130,21 @@ export class SocketCacheService {
   // ONLINE STATUS
   // ============================================================================
 
-  /**
+  /*
    * Get all online user IDs
    */
   async getOnlineUserIds(): Promise<string[]> {
     return this.redisService.smembers(SocketCacheKeys.ONLINE_USERS);
   }
 
-  /**
+  /*
    * Check if a user is online
    */
   async isUserOnline(userId: string): Promise<boolean> {
     return this.redisService.sismember(SocketCacheKeys.ONLINE_USERS, userId);
   }
 
-  /**
+  /*
    * Get online status for multiple users
    */
   async getOnlineStatusBatch(userIds: string[]): Promise<Map<string, boolean>> {
@@ -160,7 +160,7 @@ export class SocketCacheService {
     return result;
   }
 
-  /**
+  /*
    * Get count of online users
    */
   async getOnlineUserCount(): Promise<number> {
@@ -172,7 +172,7 @@ export class SocketCacheService {
   // PRESENCE MANAGEMENT
   // ============================================================================
 
-  /**
+  /*
    * Update user's presence status
    */
   async updatePresence(
@@ -191,7 +191,7 @@ export class SocketCacheService {
     await this.redisService.setJson(key, presence, 86400);
   }
 
-  /**
+  /*
    * Get user's presence
    */
   async getPresence(userId: string): Promise<UserPresence | null> {
@@ -199,7 +199,7 @@ export class SocketCacheService {
     return this.redisService.getJson<UserPresence>(key);
   }
 
-  /**
+  /*
    * Get presence for multiple users
    */
   async getPresenceBatch(userIds: string[]): Promise<Map<string, UserPresence | null>> {
@@ -214,7 +214,7 @@ export class SocketCacheService {
     return result;
   }
 
-  /**
+  /*
    * Set user as away (can be called by client or after inactivity timeout)
    */
   async setUserAway(userId: string): Promise<void> {
@@ -224,7 +224,7 @@ export class SocketCacheService {
     }
   }
 
-  /**
+  /*
    * Set user as busy (do not disturb)
    */
   async setUserBusy(userId: string): Promise<void> {
@@ -234,7 +234,7 @@ export class SocketCacheService {
     }
   }
 
-  /**
+  /*
    * Set user back to online
    */
   async setUserOnline(userId: string): Promise<void> {
@@ -248,7 +248,7 @@ export class SocketCacheService {
   // MULTI-USER SOCKET LOOKUPS
   // ============================================================================
 
-  /**
+  /*
    * Get socket IDs for multiple users (useful for broadcasting)
    */
   async getSocketIdsForUsers(userIds: string[]): Promise<Map<string, string[]>> {
@@ -263,7 +263,7 @@ export class SocketCacheService {
     return result;
   }
 
-  /**
+  /*
    * Get all socket IDs for multiple users (flattened)
    */
   async getAllSocketIdsForUsers(userIds: string[]): Promise<string[]> {
@@ -277,7 +277,7 @@ export class SocketCacheService {
     return allSockets;
   }
 
-  /**
+  /*
    * Get online users from a list (useful for showing online friends)
    */
   async filterOnlineUsers(userIds: string[]): Promise<string[]> {
