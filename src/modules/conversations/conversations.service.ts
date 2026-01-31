@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { and, eq, getTableColumns, inArray, isNotNull, not, or, sql, SQL } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 import {
   createPaginatedResponse,
@@ -141,17 +142,15 @@ export class ConversationsService {
 
     const cursorCondition = this.buildCoalesceCursorCondition(pagination, sortColumn);
 
-    const conditions = [
-      eq(conversationMembers.userId, userId),
-      or(
-        eq(conversations.type, 'group'),
-        and(eq(conversations.type, 'direct'), isNotNull(conversations.lastMessageAt))
-      ),
-    ];
+    const conditions = [eq(conversationMembers.userId, userId)];
 
     if (cursorCondition) {
       conditions.push(cursorCondition);
     }
+
+    // Aliases for getting the other participant in direct messages
+    const otherMember = alias(conversationMembers, 'otherMember');
+    const otherUser = alias(users, 'otherUser');
 
     const rows = await this.db
       .select({
@@ -172,6 +171,11 @@ export class ConversationsService {
         senderName: users.name,
         senderEmail: users.email,
         senderAvatar: users.avatar,
+        // Other participant for direct messages
+        otherParticipantId: otherUser.id,
+        otherParticipantName: otherUser.name,
+        otherParticipantEmail: otherUser.email,
+        otherParticipantAvatar: otherUser.avatar,
       })
       .from(conversations)
       .innerJoin(conversationMembers, eq(conversations.id, conversationMembers.conversationId))
@@ -183,6 +187,12 @@ export class ConversationsService {
         )
       )
       .leftJoin(users, eq(users.id, messages.senderId))
+      // Join to get the other participant for direct messages
+      .leftJoin(
+        otherMember,
+        and(eq(otherMember.conversationId, conversations.id), not(eq(otherMember.userId, userId)))
+      )
+      .leftJoin(otherUser, eq(otherUser.id, otherMember.userId))
       .where(and(...conditions))
       .orderBy(sql`${sortColumn} DESC`)
       .limit(getPaginationLimit(pagination));
@@ -190,9 +200,12 @@ export class ConversationsService {
     const transformedRows: ConversationWithLastMessage[] = rows.map(row => ({
       id: row.id,
       type: row.type,
-      name: row.name,
+      name: row.type === 'direct' && row.otherParticipantName ? row.otherParticipantName : row.name,
       description: row.description,
-      avatarUrl: row.avatarUrl,
+      avatarUrl:
+        row.type === 'direct' && row.otherParticipantAvatar
+          ? row.otherParticipantAvatar
+          : row.avatarUrl,
       createdBy: row.createdBy,
       lastMessageAt: row.lastMessageAt,
       createdAt: row.createdAt,
@@ -213,6 +226,15 @@ export class ConversationsService {
               : null,
           }
         : null,
+      otherParticipant:
+        row.type === 'direct' && row.otherParticipantId
+          ? {
+              id: row.otherParticipantId,
+              name: row.otherParticipantName!,
+              email: row.otherParticipantEmail!,
+              avatar: row.otherParticipantAvatar!,
+            }
+          : null,
     }));
 
     return createPaginatedResponse(
@@ -232,9 +254,35 @@ export class ConversationsService {
       throw new ForbiddenException('You are not a member of this conversation');
     }
 
+    const otherMember = alias(conversationMembers, 'otherMember');
+    const otherUser = alias(users, 'otherUser');
+
     const [conversation] = await this.db
-      .select()
+      .select({
+        id: conversations.id,
+        type: conversations.type,
+        name: conversations.name,
+        description: conversations.description,
+        avatarUrl: conversations.avatarUrl,
+        createdBy: conversations.createdBy,
+        lastMessageAt: conversations.lastMessageAt,
+        createdAt: conversations.createdAt,
+        updatedAt: conversations.updatedAt,
+        otherParticipantId: otherUser.id,
+        otherParticipantName: otherUser.name,
+        otherParticipantEmail: otherUser.email,
+        otherParticipantAvatar: otherUser.avatar,
+      })
       .from(conversations)
+      .leftJoin(
+        otherMember,
+        and(
+          eq(otherMember.conversationId, conversations.id),
+          not(eq(otherMember.userId, userId)),
+          sql`${otherMember.leftAt} IS NULL`
+        )
+      )
+      .leftJoin(otherUser, eq(otherUser.id, otherMember.userId))
       .where(eq(conversations.id, conversationId))
       .limit(1);
 
@@ -244,8 +292,26 @@ export class ConversationsService {
 
     const members = await this.getConversationMembers(conversationId);
 
+    const transformedConversation = {
+      id: conversation.id,
+      type: conversation.type,
+      name:
+        conversation.type === 'direct' && conversation.otherParticipantName
+          ? conversation.otherParticipantName
+          : conversation.name,
+      avatarUrl:
+        conversation.type === 'direct' && conversation.otherParticipantAvatar
+          ? conversation.otherParticipantAvatar
+          : conversation.avatarUrl,
+      createdBy: conversation.createdBy,
+      description: conversation.description,
+      lastMessageAt: conversation.lastMessageAt,
+      createdAt: conversation.createdAt,
+      updatedAt: conversation.updatedAt,
+    };
+
     return {
-      ...conversation,
+      ...transformedConversation,
       members,
     };
   }

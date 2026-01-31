@@ -10,6 +10,7 @@ export type LastMessageWithSender = {
 
 export type ConversationWithLastMessage = Conversation & {
   lastMessage: LastMessageWithSender | null;
+  otherParticipant?: PublicUser | null;
 };
 
 export type ConversationMemberWithUser = ConversationMember & { user: PublicUser };

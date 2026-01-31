@@ -38,7 +38,7 @@ export const insertConversationSchema = createInsertSchema(schemas.conversations
   type: z.enum(['direct', 'group']),
 })
   .extend({
-    memberIds: z.array(z.string()).min(2, { message: 'At least 2 members are required' }),
+    memberIds: z.array(z.string()).min(1, { message: 'At least 1 member is required' }),
   })
   .omit({
     id: true,
