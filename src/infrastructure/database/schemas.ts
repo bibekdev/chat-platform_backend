@@ -169,7 +169,7 @@ export const messages = pgTable(
     content: text('content'),
     type: messageTypeEnum('type').notNull().default('text'),
     replyToId: text('reply_to_id'),
-    forwaredFromId: text('forwarded_from_id'),
+    forwardedFromId: text('forwarded_from_id'),
     isEdited: boolean('is_edited').default(false).notNull(),
     editedAt: timestamp('edited_at', { withTimezone: true }),
     isDeleted: boolean('is_deleted').default(false).notNull(),

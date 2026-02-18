@@ -35,6 +35,30 @@ export interface ErrorPayload {
   code?: string;
 }
 
+export interface JoinConversationPayload {
+  conversationId: string;
+}
+
+export interface LeaveConversationPayload {
+  conversationId: string;
+}
+
+export interface SendMessagePayload {
+  conversationId: string;
+  content?: string;
+  type?: 'text' | 'image' | 'file' | 'audio' | 'video';
+  replyToId?: string;
+  attachments?: {
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+    fileSize: number;
+    duration?: number;
+    thumbnailUrl?: string;
+    blurHash?: string;
+  }[];
+}
+
 export const getRoomName = {
   conversation: (conversationId: string) => `conversation:${conversationId}`,
   user: (userId: string) => `user:${userId}`,

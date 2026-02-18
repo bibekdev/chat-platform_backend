@@ -7,6 +7,7 @@ import { RedisModule } from './infrastructure/redis/redis.module';
 import { WebsocketsModule } from './infrastructure/websockets/websockets.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FriendsModule } from './modules/friends/friends.module';
+import { MessagesModule } from './modules/messages/messages.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     FriendsModule,
     WebsocketsModule,
+    MessagesModule,
   ],
   controllers: [],
   providers: [],

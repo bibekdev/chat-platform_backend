@@ -4,6 +4,7 @@ import { and, eq, getTableColumns, inArray, not } from 'drizzle-orm';
 import {
   buildCursorCondition,
   createPaginatedResponse,
+  getPaginationLimit,
   getSortDirection,
   PaginatedResponse,
   PaginationConfig,
@@ -51,19 +52,16 @@ export class MessagesService {
     const messageId = generateUniqueId('msg');
     const now = new Date();
 
-    const [message] = await this.db
-      .insert(messages)
-      .values({
-        id: messageId,
-        conversationId,
-        senderId,
-        content: dto.content ?? null,
-        type: dto.type,
-        replyToId: dto.replyToId ?? null,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
+    await this.db.insert(messages).values({
+      id: messageId,
+      conversationId,
+      senderId,
+      content: dto.content ?? null,
+      type: dto.type,
+      replyToId: dto.replyToId ?? null,
+      createdAt: now,
+      updatedAt: now,
+    });
 
     // Create attachments if any
     if (dto.attachments && dto.attachments.length > 0) {
@@ -209,7 +207,7 @@ export class MessagesService {
       content: message.content,
       type: message.type,
       replyToId: message.replyToId,
-      forwaredFromId: message.forwaredFromId,
+      forwardedFromId: message.forwardedFromId,
       isEdited: message.isEdited,
       editedAt: message.editedAt,
       isDeleted: message.isDeleted,
@@ -257,7 +255,7 @@ export class MessagesService {
       content: message.content,
       type: message.type,
       replyToId: message.replyToId,
-      forwaredFromId: message.forwaredFromId,
+      forwardedFromId: message.forwardedFromId,
       isEdited: message.isEdited,
       editedAt: message.editedAt,
       isDeleted: message.isDeleted,
@@ -306,7 +304,7 @@ export class MessagesService {
         content: messages.content,
         type: messages.type,
         replyToId: messages.replyToId,
-        forwaredFromId: messages.forwaredFromId,
+        forwardedFromId: messages.forwardedFromId,
         isEdited: messages.isEdited,
         editedAt: messages.editedAt,
         isDeleted: messages.isDeleted,
@@ -323,7 +321,7 @@ export class MessagesService {
       .leftJoin(users, eq(messages.senderId, users.id))
       .where(and(...conditions))
       .orderBy(sortDirection(messages.createdAt), sortDirection(messages.id))
-      .limit(pagination.limit);
+      .limit(getPaginationLimit(pagination));
 
     // Fetch attachments and reactions for all messages
     const messageIds = rows.map(row => row.id);
@@ -341,7 +339,7 @@ export class MessagesService {
       content: row.isDeleted && row.deletedForEveryone ? null : row.content,
       type: row.type,
       replyToId: row.replyToId,
-      forwaredFromId: row.forwaredFromId,
+      forwardedFromId: row.forwardedFromId,
       isEdited: row.isEdited,
       editedAt: row.editedAt,
       isDeleted: row.isDeleted,
@@ -631,7 +629,7 @@ export class MessagesService {
         content: messages.content,
         type: messages.type,
         replyToId: messages.replyToId,
-        forwaredFromId: messages.forwaredFromId,
+        forwardedFromId: messages.forwardedFromId,
         isEdited: messages.isEdited,
         editedAt: messages.editedAt,
         isDeleted: messages.isDeleted,
