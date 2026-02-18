@@ -25,6 +25,7 @@ import {
   JoinConversationPayload,
   LeaveConversationPayload,
   SendMessagePayload,
+  TypingPayload,
   UserOnlinePayload,
   WEBSOCKET_EVENTS,
 } from './types';
@@ -197,6 +198,58 @@ export class WebsocketsGateway implements OnGatewayInit, OnGatewayConnection, On
     } catch (error) {
       return this.handleError(client, CONVERSATION_EVENTS.SEND_MESSAGE, error);
     }
+  }
+
+  @SubscribeMessage(CONVERSATION_EVENTS.TYPING_START)
+  handleTypingStart(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: TypingPayload
+  ) {
+    const { conversationId } = payload;
+    const user = client.user;
+
+    const event = {
+      conversationId,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      },
+      isTyping: true,
+    };
+
+    client
+      .to(getRoomName.conversation(conversationId))
+      .emit(CONVERSATION_EVENTS.USER_TYPING, event);
+
+    return { success: true };
+  }
+
+  @SubscribeMessage(CONVERSATION_EVENTS.TYPING_STOP)
+  handleStopTyping(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: TypingPayload
+  ) {
+    const { conversationId } = payload;
+    const user = client.user;
+
+    const event = {
+      conversationId,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      },
+      isTyping: false,
+    };
+
+    client
+      .to(getRoomName.conversation(conversationId))
+      .emit(CONVERSATION_EVENTS.USER_TYPING, event);
+
+    return { success: true };
   }
 
   /*

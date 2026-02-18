@@ -59,6 +59,10 @@ export interface SendMessagePayload {
   }[];
 }
 
+export interface TypingPayload {
+  conversationId: string;
+}
+
 export const getRoomName = {
   conversation: (conversationId: string) => `conversation:${conversationId}`,
   user: (userId: string) => `user:${userId}`,
