@@ -20,6 +20,8 @@ import { PublicUser } from '../database/types';
 import { SocketCacheService } from '../redis/socket-cache.service';
 import {
   AuthenticatedSocket,
+  DeleteMessagePayload,
+  EditMessagePayload,
   ErrorPayload,
   getRoomName,
   JoinConversationPayload,
@@ -197,6 +199,74 @@ export class WebsocketsGateway implements OnGatewayInit, OnGatewayConnection, On
       return { success: true, data: message };
     } catch (error) {
       return this.handleError(client, CONVERSATION_EVENTS.SEND_MESSAGE, error);
+    }
+  }
+
+  @SubscribeMessage(CONVERSATION_EVENTS.EDIT_MESSAGE)
+  async handleEditMessage(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: EditMessagePayload
+  ) {
+    const { conversationId, messageId, content } = payload;
+    const userId = client.user.id;
+
+    try {
+      const message = await this.messagesService.editMessage(conversationId, messageId, userId, {
+        content,
+      });
+      const event = {
+        conversationId,
+        message,
+      };
+
+      client
+        .to(getRoomName.conversation(conversationId))
+        .emit(CONVERSATION_EVENTS.MESSAGE_UPDATED, event);
+
+      const memberIds = await this.conversationsService.getConversationMemberIds(conversationId);
+      const recipientIds = memberIds.filter(id => id !== userId);
+      this.websocketsService.sendToUsers(recipientIds, CONVERSATION_EVENTS.MESSAGE_UPDATED, event);
+
+      return { success: true, data: message };
+    } catch (error) {
+      return this.handleError(client, CONVERSATION_EVENTS.EDIT_MESSAGE, error);
+    }
+  }
+
+  @SubscribeMessage(CONVERSATION_EVENTS.DELETE_MESSAGE)
+  async handleDeleteMessage(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: DeleteMessagePayload
+  ) {
+    const { conversationId, messageId, forEveryone } = payload;
+    const userId = client.user.id;
+
+    try {
+      await this.messagesService.deleteMessage(conversationId, messageId, userId, forEveryone);
+
+      if (forEveryone) {
+        const event = {
+          conversationId,
+          messageId,
+          deletedForEveryone: true,
+        };
+
+        client
+          .to(getRoomName.conversation(conversationId))
+          .emit(CONVERSATION_EVENTS.MESSAGE_DELETED, event);
+
+        const memberIds = await this.conversationsService.getConversationMemberIds(conversationId);
+        const recipientIds = memberIds.filter(id => id !== userId);
+        this.websocketsService.sendToUsers(
+          recipientIds,
+          CONVERSATION_EVENTS.MESSAGE_DELETED,
+          event
+        );
+      }
+
+      return { success: true };
+    } catch (error) {
+      return this.handleError(client, CONVERSATION_EVENTS.DELETE_MESSAGE, error);
     }
   }
 

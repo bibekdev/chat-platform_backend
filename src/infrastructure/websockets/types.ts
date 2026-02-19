@@ -63,6 +63,18 @@ export interface TypingPayload {
   conversationId: string;
 }
 
+export interface EditMessagePayload {
+  conversationId: string;
+  messageId: string;
+  content: string;
+}
+
+export interface DeleteMessagePayload {
+  conversationId: string;
+  messageId: string;
+  forEveryone?: boolean;
+}
+
 export const getRoomName = {
   conversation: (conversationId: string) => `conversation:${conversationId}`,
   user: (userId: string) => `user:${userId}`,
