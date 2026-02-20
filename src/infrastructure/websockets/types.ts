@@ -75,6 +75,17 @@ export interface DeleteMessagePayload {
   forEveryone?: boolean;
 }
 
+export interface MarkReadPayload {
+  conversationId: string;
+  messageId: string;
+}
+
+export interface ReactionPayload {
+  conversationId: string;
+  messageId: string;
+  reaction: string;
+}
+
 export const getRoomName = {
   conversation: (conversationId: string) => `conversation:${conversationId}`,
   user: (userId: string) => `user:${userId}`,

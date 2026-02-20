@@ -26,6 +26,8 @@ import {
   getRoomName,
   JoinConversationPayload,
   LeaveConversationPayload,
+  MarkReadPayload,
+  ReactionPayload,
   SendMessagePayload,
   TypingPayload,
   UserOnlinePayload,
@@ -320,6 +322,91 @@ export class WebsocketsGateway implements OnGatewayInit, OnGatewayConnection, On
       .emit(CONVERSATION_EVENTS.USER_TYPING, event);
 
     return { success: true };
+  }
+
+  @SubscribeMessage(CONVERSATION_EVENTS.MARK_READ)
+  async handleMarkRead(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: MarkReadPayload
+  ) {
+    const { conversationId, messageId } = payload;
+    const userId = client.user.id;
+
+    try {
+      await this.messagesService.markMessageAsRead(conversationId, messageId, userId);
+
+      const event = {
+        conversationId,
+        messageId,
+        userId,
+        readAt: new Date(),
+      };
+
+      client
+        .to(getRoomName.conversation(conversationId))
+        .emit(CONVERSATION_EVENTS.MESSAGE_READ, event);
+
+      return { success: true };
+    } catch (error) {
+      return this.handleError(client, CONVERSATION_EVENTS.MESSAGE_READ, error);
+    }
+  }
+
+  @SubscribeMessage(CONVERSATION_EVENTS.ADD_REACTION)
+  async handleAddReaction(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: ReactionPayload
+  ) {
+    const { conversationId, messageId, reaction } = payload;
+    const userId = client.user.id;
+
+    try {
+      await this.messagesService.addReaction(conversationId, messageId, userId, reaction);
+
+      // Fetch updated message with all reactions
+      const message = await this.messagesService.getMessageWithDetails(messageId, userId);
+
+      const event = {
+        conversationId,
+        message,
+      };
+
+      client
+        .to(getRoomName.conversation(conversationId))
+        .emit(CONVERSATION_EVENTS.MESSAGE_UPDATED, event);
+
+      return { success: true, data: message };
+    } catch (error) {
+      return this.handleError(client, CONVERSATION_EVENTS.ADD_REACTION, error);
+    }
+  }
+
+  @SubscribeMessage(CONVERSATION_EVENTS.REMOVE_REACTION)
+  async handleRemoveReaction(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() payload: ReactionPayload
+  ) {
+    const { conversationId, messageId, reaction } = payload;
+    const userId = client.user.id;
+
+    try {
+      await this.messagesService.removeReaction(conversationId, messageId, userId, reaction);
+
+      const message = await this.messagesService.getMessageWithDetails(messageId, userId);
+
+      const event = {
+        conversationId,
+        message,
+      };
+
+      client
+        .to(getRoomName.conversation(conversationId))
+        .emit(CONVERSATION_EVENTS.MESSAGE_UPDATED, event);
+
+      return { success: true, data: message };
+    } catch (error) {
+      return this.handleError(client, CONVERSATION_EVENTS.REMOVE_REACTION, error);
+    }
   }
 
   /*
