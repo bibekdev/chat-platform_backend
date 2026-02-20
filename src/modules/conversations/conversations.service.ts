@@ -233,6 +233,9 @@ export class ConversationsService {
       }
     }
 
+    const conversationIds = rows.map(r => r.id);
+    const unreadCountMap = await this.getUnreadCountsForConversations(conversationIds, userId);
+
     const transformedRows: ConversationWithLastMessage[] = rows.map(row => ({
       id: row.id,
       type: row.type,
@@ -272,6 +275,7 @@ export class ConversationsService {
             }
           : null,
       memberAvatars: row.type === 'group' ? (memberAvatarMap.get(row.id) ?? []) : [],
+      unreadCount: unreadCountMap.get(row.id) ?? 0,
     }));
 
     return createPaginatedResponse(
@@ -761,6 +765,45 @@ export class ConversationsService {
           }
         : null,
     };
+  }
+
+  private async getUnreadCountsForConversations(
+    conversationIds: string[],
+    userId: string
+  ): Promise<Map<string, number>> {
+    if (conversationIds.length === 0) return new Map();
+
+    const results = await this.db
+      .select({
+        conversationId: messages.conversationId,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(messages)
+      .innerJoin(
+        conversationMembers,
+        and(
+          eq(conversationMembers.conversationId, messages.conversationId),
+          eq(conversationMembers.userId, userId)
+        )
+      )
+      .where(
+        and(
+          inArray(messages.conversationId, conversationIds),
+          not(eq(messages.senderId, userId)),
+          isNotNull(messages.senderId),
+          or(
+            sql`${conversationMembers.lastReadAt} IS NULL`,
+            sql`${messages.createdAt} > ${conversationMembers.lastReadAt}`
+          )
+        )
+      )
+      .groupBy(messages.conversationId);
+
+    const map = new Map<string, number>();
+    for (const r of results) {
+      map.set(r.conversationId, Number(r.count));
+    }
+    return map;
   }
 
   private async getUnreadMessageCount(conversationId: string, userId: string): Promise<number> {

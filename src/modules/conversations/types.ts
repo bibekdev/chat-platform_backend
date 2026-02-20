@@ -14,6 +14,7 @@ export type ConversationWithLastMessage = Conversation & {
   lastMessage: LastMessageWithSender | null;
   otherParticipant?: PublicUser | null;
   memberAvatars: MemberAvatar[];
+  unreadCount: number;
 };
 
 export type ConversationMemberWithUser = ConversationMember & { user: PublicUser };
