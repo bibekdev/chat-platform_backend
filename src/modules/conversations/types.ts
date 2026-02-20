@@ -1,5 +1,7 @@
 import { Conversation, ConversationMember, PublicUser } from '@/infrastructure/database/types';
 
+export type MemberAvatar = { avatar: string; name: string };
+
 export type LastMessageWithSender = {
   id: string;
   content: string | null;
@@ -11,6 +13,7 @@ export type LastMessageWithSender = {
 export type ConversationWithLastMessage = Conversation & {
   lastMessage: LastMessageWithSender | null;
   otherParticipant?: PublicUser | null;
+  memberAvatars: MemberAvatar[];
 };
 
 export type ConversationMemberWithUser = ConversationMember & { user: PublicUser };

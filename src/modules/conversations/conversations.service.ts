@@ -142,7 +142,10 @@ export class ConversationsService {
 
     const cursorCondition = this.buildCoalesceCursorCondition(pagination, sortColumn);
 
-    const conditions = [eq(conversationMembers.userId, userId)];
+    const conditions = [
+      eq(conversationMembers.userId, userId),
+      sql`${conversationMembers.leftAt} IS NULL`,
+    ];
 
     if (cursorCondition) {
       conditions.push(cursorCondition);
@@ -190,12 +193,45 @@ export class ConversationsService {
       // Join to get the other participant for direct messages
       .leftJoin(
         otherMember,
-        and(eq(otherMember.conversationId, conversations.id), not(eq(otherMember.userId, userId)))
+        and(
+          eq(otherMember.conversationId, conversations.id),
+          not(eq(otherMember.userId, userId)),
+          eq(conversations.type, 'direct')
+        )
       )
       .leftJoin(otherUser, eq(otherUser.id, otherMember.userId))
       .where(and(...conditions))
       .orderBy(sql`${sortColumn} DESC`)
       .limit(getPaginationLimit(pagination));
+
+    // Batch-fetch member avatars for group conversations(up to 4 per group)
+    const groupIds = rows.filter(r => r.type === 'group').map(r => r.id);
+    const memberAvatarMap = new Map<string, Array<{ avatar: string; name: string }>>();
+
+    if (groupIds.length > 0) {
+      const memberRows = await this.db
+        .select({
+          conversationId: conversationMembers.conversationId,
+          avatar: users.avatar,
+          name: users.name,
+        })
+        .from(conversationMembers)
+        .innerJoin(users, eq(conversationMembers.userId, users.id))
+        .where(
+          and(
+            inArray(conversationMembers.conversationId, groupIds),
+            sql`${conversationMembers.leftAt} IS NULL`
+          )
+        );
+
+      for (const row of memberRows) {
+        const existing = memberAvatarMap.get(row.conversationId) ?? [];
+        if (existing.length < 4) {
+          existing.push({ avatar: row.avatar, name: row.name });
+        }
+        memberAvatarMap.set(row.conversationId, existing);
+      }
+    }
 
     const transformedRows: ConversationWithLastMessage[] = rows.map(row => ({
       id: row.id,
@@ -235,6 +271,7 @@ export class ConversationsService {
               avatar: row.otherParticipantAvatar!,
             }
           : null,
+      memberAvatars: row.type === 'group' ? (memberAvatarMap.get(row.id) ?? []) : [],
     }));
 
     return createPaginatedResponse(
