@@ -218,7 +218,7 @@ export class WebsocketsGateway implements OnGatewayInit, OnGatewayConnection, On
       });
       const event = {
         conversationId,
-        message,
+        data: message,
       };
 
       client
