@@ -22,6 +22,20 @@ export const WEBSOCKET_EVENTS = {
   ERROR: 'error',
 } as const;
 
+export const CALL_EVENTS = {
+  CALL_INITIATE: 'call:initiate',
+  CALL_INCOMING: 'call:incoming',
+  CALL_ACCEPT: 'call:accept',
+  CALL_REJECT: 'call:reject',
+  CALL_OFFER: 'call:offer',
+  CALL_ANSWER: 'call:answer',
+  CALL_ICE_CANDIDATE: 'call:ice-candidate',
+  CALL_END: 'call:end',
+  CALL_ENDED: 'call:ended',
+  CALL_PARTICIPANT_JOINED: 'call:participant-joined',
+  CALL_PARTICIPANT_LEFT: 'call:participant-left',
+} as const;
+
 export type WebsocketEvent = (typeof WEBSOCKET_EVENTS)[keyof typeof WEBSOCKET_EVENTS];
 
 export interface UserOnlinePayload {
@@ -86,7 +100,103 @@ export interface ReactionPayload {
   reaction: string;
 }
 
+// Call signaling payloads (client -> server)
+export type CallMediaType = 'audio' | 'video';
+
+export interface CallInitiatePayload {
+  conversationId: string;
+  mediaType?: CallMediaType;
+}
+
+export interface CallAcceptPayload {
+  callId: string;
+}
+
+export interface CallRejectPayload {
+  callId: string;
+}
+
+export interface CallOfferPayload {
+  callId: string;
+  targetUserId: string;
+  sdp: RTCSessionDescriptionInit;
+}
+
+export interface CallAnswerPayload {
+  callId: string;
+  targetUserId: string;
+  sdp: RTCSessionDescriptionInit;
+}
+
+export interface CallIceCandidatePayload {
+  callId: string;
+  targetUserId: string;
+  candidate: RTCIceCandidateInit;
+}
+
+export interface CallEndPayload {
+  callId: string;
+}
+
+// Call signaling events (server -> client)
+export interface CallIncomingEvent {
+  callId: string;
+  conversationId: string;
+  caller: PublicUser;
+  conversationName: string | null;
+  isGroup: boolean;
+  participants: string[];
+  mediaType: CallMediaType;
+}
+
+export interface CallAcceptedEvent {
+  callId: string;
+  userId: string;
+  user: PublicUser;
+}
+
+export interface CallEndedEvent {
+  callId: string;
+  reason: 'ended' | 'rejected' | 'timeout' | 'error';
+}
+
+export interface CallParticipantEvent {
+  callId: string;
+  userId: string;
+  user: PublicUser;
+}
+
+export interface CallOfferEvent {
+  callId: string;
+  fromUserId: string;
+  sdp: RTCSessionDescriptionInit;
+}
+
+export interface CallAnswerEvent {
+  callId: string;
+  fromUserId: string;
+  sdp: RTCSessionDescriptionInit;
+}
+
+export interface CallIceCandidateEvent {
+  callId: string;
+  fromUserId: string;
+  candidate: RTCIceCandidateInit;
+}
+
+// Active call state stored in Redis
+export interface ActiveCall {
+  id: string;
+  conversationId: string;
+  initiatorId: string;
+  participants: string[];
+  startedAt: string;
+  isGroup: boolean;
+  mediaType: CallMediaType;
+}
+
 export const getRoomName = {
   conversation: (conversationId: string) => `conversation:${conversationId}`,
   user: (userId: string) => `user:${userId}`,
+  call: (callId: string) => `call:${callId}`,
 } as const;
