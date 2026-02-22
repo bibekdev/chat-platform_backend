@@ -83,6 +83,9 @@ export class WebsocketsGateway implements OnGatewayInit, OnGatewayConnection, On
 
       // Notify friends that user is online
       await this.notifyFriendsOfOnlineStatus(userId, user, true);
+
+      // Send the connecting user a list of their currently online friends
+      await this.sendOnlineFriends(client, userId);
     } catch (error) {
       this.logger.error(`Connection error: ${error.message}`);
       client.disconnect();
@@ -723,6 +726,26 @@ export class WebsocketsGateway implements OnGatewayInit, OnGatewayConnection, On
       }
     } catch (error) {
       this.logger.error(`Error handling call disconnect for user ${userId}: ${error.message}`);
+    }
+  }
+
+  private async sendOnlineFriends(client: AuthenticatedSocket, userId: string) {
+    try {
+      const friendsResult = await this.friendsService.getFriends(userId, {
+        limit: 100,
+        direction: 'desc',
+      });
+      const friendIds = friendsResult.data.map(friend => friend.friendId);
+
+      if (friendIds.length === 0) {
+        client.emit(WEBSOCKET_EVENTS.ONLINE_FRIENDS, { userIds: [] });
+        return;
+      }
+
+      const onlineFriendIds = await this.socketCacheService.filterOnlineUsers(friendIds);
+      client.emit(WEBSOCKET_EVENTS.ONLINE_FRIENDS, { userIds: onlineFriendIds });
+    } catch (error) {
+      this.logger.error(`Failed to send online friends list: ${error.message}`);
     }
   }
 
