@@ -1,98 +1,296 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Chat Platform — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A real-time chat platform backend built with NestJS, featuring WebSocket messaging, WebRTC voice/video calls, friend management, and online presence tracking.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
 
-## Description
+| Category            | Technology                                   |
+| ------------------- | -------------------------------------------- |
+| **Framework**       | NestJS v11                                   |
+| **Runtime**         | Node.js (ES2023)                             |
+| **Language**        | TypeScript v5.7                              |
+| **Database**        | PostgreSQL                                   |
+| **ORM**             | Drizzle ORM v0.45                            |
+| **Cache**           | Redis (ioredis v5.8)                         |
+| **WebSockets**      | Socket.IO v4.8 + Redis Adapter               |
+| **Authentication**  | JWT (access + refresh tokens), bcrypt        |
+| **Validation**      | Zod v4 + nestjs-zod                          |
+| **Security**        | Helmet, CORS                                 |
+| **WebRTC**          | Coturn TURN server (signaling via Socket.IO) |
+| **Package Manager** | pnpm                                         |
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Features
 
-## Project setup
+### Authentication & Security
 
-```bash
-$ pnpm install
+- JWT-based auth with access tokens (7d) and refresh tokens (15d)
+- Token family rotation with reuse detection
+- Password hashing with bcrypt (12 rounds)
+- Redis session caching
+- IP address and user agent tracking
+- Global auth guard with `@Public()` opt-out decorator
+- Helmet security headers and CORS protection
+
+### Real-Time Messaging
+
+- WebSocket-based messaging via Socket.IO
+- Room-based conversation channels
+- Message CRUD (send, edit, delete with soft deletes)
+- Typing indicators (`typing:start`, `typing:stop`)
+- Read receipts
+- Message reactions (add/remove)
+- Message attachments (image, file, audio, video)
+
+### Voice & Video Calls
+
+- WebRTC signaling via WebSocket events
+- Audio and video call support
+- Group call support
+- Call lifecycle management (initiate, accept, reject, end)
+- ICE candidate exchange
+- Participant join/leave events
+- Call state management in Redis
+- TURN server integration (Coturn)
+
+### Friend System
+
+- Send, accept, reject, and cancel friend requests
+- Friend list with pagination
+- Remove friends
+- Incoming/outgoing request tracking with counts
+
+### Conversations
+
+- Direct messages (1:1)
+- Group conversations
+- Conversation member management (add, remove, leave)
+- Member roles (owner, admin, member)
+- Conversation CRUD
+
+### Online Presence
+
+- Real-time online/offline status tracking
+- Online friends list broadcasting
+- Presence update events
+- Socket-to-user mapping via Redis
+
+### Infrastructure
+
+- Redis adapter for Socket.IO horizontal scaling
+- Cursor-based pagination for efficient large dataset queries
+- Database connection pooling (max 20 connections)
+- Drizzle migrations with migration history
+
+## Database Schema
+
+| Table                   | Description                                           |
+| ----------------------- | ----------------------------------------------------- |
+| `users`                 | User accounts                                         |
+| `refresh_tokens`        | JWT refresh token tracking                            |
+| `friend_requests`       | Friend request workflow (pending, accepted, rejected) |
+| `friends`               | Established friend relationships                      |
+| `conversations`         | Direct and group conversations                        |
+| `conversation_members`  | Membership with roles (owner, admin, member)          |
+| `messages`              | Messages (text, image, file, audio, video, system)    |
+| `message_attachments`   | File attachments on messages                          |
+| `message_reactions`     | Emoji reactions                                       |
+| `message_read_receipts` | Per-user read receipts                                |
+| `deleted_messages`      | Soft delete tracking                                  |
+
+## API Reference
+
+All endpoints are prefixed with `/api/v1`. Authenticated unless marked with `@Public()`.
+
+### Auth — `/auth`
+
+| Method | Endpoint    | Description                     |
+| ------ | ----------- | ------------------------------- |
+| POST   | `/register` | Register a new user             |
+| POST   | `/login`    | Login with credentials          |
+| POST   | `/refresh`  | Refresh access + refresh tokens |
+| POST   | `/logout`   | Logout and invalidate tokens    |
+| GET    | `/me`       | Get current authenticated user  |
+
+### Users — `/users`
+
+| Method | Endpoint       | Description                |
+| ------ | -------------- | -------------------------- |
+| GET    | `/suggestions` | Paginated user suggestions |
+
+### Friends — `/friends`
+
+| Method | Endpoint                      | Description                 |
+| ------ | ----------------------------- | --------------------------- |
+| GET    | `/`                           | Paginated friend list       |
+| DELETE | `/:friendId`                  | Remove a friend             |
+| POST   | `/requests`                   | Send a friend request       |
+| GET    | `/requests/incoming`          | Paginated incoming requests |
+| GET    | `/requests/incoming/count`    | Incoming request count      |
+| GET    | `/requests/outgoing`          | Paginated outgoing requests |
+| POST   | `/requests/:requestId/accept` | Accept a friend request     |
+| POST   | `/requests/:requestId/reject` | Reject a friend request     |
+| DELETE | `/requests/:requestId/cancel` | Cancel an outgoing request  |
+
+### Conversations — `/conversations`
+
+| Method | Endpoint                      | Description                 |
+| ------ | ----------------------------- | --------------------------- |
+| GET    | `/`                           | Paginated conversation list |
+| POST   | `/`                           | Create a conversation       |
+| GET    | `/:id`                        | Get a conversation          |
+| GET    | `/:id/details`                | Get conversation details    |
+| PUT    | `/:id`                        | Update a conversation       |
+| DELETE | `/:id`                        | Delete a conversation       |
+| GET    | `/:id/members`                | List members                |
+| POST   | `/:id/members`                | Add members                 |
+| DELETE | `/:id/members/:memberId`      | Remove a member             |
+| POST   | `/:id/leave`                  | Leave a conversation        |
+| PATCH  | `/:id/members/:memberId/role` | Update member role          |
+
+### Messages — `/conversations/:conversationId/messages`
+
+| Method | Endpoint | Description               |
+| ------ | -------- | ------------------------- |
+| POST   | `/`      | Send a message            |
+| GET    | `/`      | Paginated message history |
+
+## WebSocket Events
+
+### Connection
+
+- JWT authentication required on handshake
+- Auto-joins `user:{userId}` room on connect
+
+### Messaging
+
+| Event                | Direction        | Description               |
+| -------------------- | ---------------- | ------------------------- |
+| `conversation:join`  | Client -> Server | Join a conversation room  |
+| `conversation:leave` | Client -> Server | Leave a conversation room |
+| `message:send`       | Client -> Server | Send a new message        |
+| `message:edit`       | Client -> Server | Edit a message            |
+| `message:delete`     | Client -> Server | Delete a message          |
+| `message:read`       | Client -> Server | Mark messages as read     |
+| `typing:start`       | Client -> Server | Start typing indicator    |
+| `typing:stop`        | Client -> Server | Stop typing indicator     |
+| `reaction:add`       | Client -> Server | Add a reaction            |
+| `reaction:remove`    | Client -> Server | Remove a reaction         |
+
+### Presence
+
+| Event             | Direction        | Description                    |
+| ----------------- | ---------------- | ------------------------------ |
+| `userOnline`      | Server -> Client | A friend came online           |
+| `userOffline`     | Server -> Client | A friend went offline          |
+| `onlineFriends`   | Server -> Client | Initial list of online friends |
+| `presenceUpdated` | Server -> Client | Presence status change         |
+
+### Call Signaling
+
+| Event                     | Direction        | Description                |
+| ------------------------- | ---------------- | -------------------------- |
+| `call:initiate`           | Client -> Server | Start a call               |
+| `call:incoming`           | Server -> Client | Incoming call notification |
+| `call:accept`             | Client -> Server | Accept a call              |
+| `call:reject`             | Client -> Server | Reject a call              |
+| `call:offer`              | Bidirectional    | WebRTC SDP offer           |
+| `call:answer`             | Bidirectional    | WebRTC SDP answer          |
+| `call:ice-candidate`      | Bidirectional    | ICE candidate exchange     |
+| `call:end`                | Client -> Server | End a call                 |
+| `call:ended`              | Server -> Client | Call ended notification    |
+| `call:participant-joined` | Server -> Client | Participant joined         |
+| `call:participant-left`   | Server -> Client | Participant left           |
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js >= 18
+- pnpm
+- PostgreSQL
+- Redis
+
+### Setup
+
+1. **Clone the repository**
+
+2. **Install dependencies**
+
+   ```bash
+   pnpm install
+   ```
+
+3. **Start infrastructure** (Redis + Coturn via Docker)
+
+   ```bash
+   docker compose up -d
+   ```
+
+4. **Configure environment variables** — create a `.env` file:
+
+   ```env
+   NODE_ENV=development
+   HOST=localhost
+   PORT=8080
+
+   DATABASE_URL=postgres://user:password@localhost:5432/chat_platform
+
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+
+   JWT_ACCESS_SECRET=your-access-secret
+   JWT_ACCESS_EXPIRES_IN=7d
+   JWT_REFRESH_SECRET=your-refresh-secret
+   JWT_REFRESH_EXPIRES_IN=15d
+
+   ALLOWED_ORIGINS=http://localhost:3000
+   ```
+
+5. **Run database migrations**
+
+   ```bash
+   pnpm db:migrate
+   ```
+
+6. **Start the development server**
+   ```bash
+   pnpm dev
+   ```
+
+### Scripts
+
+| Script             | Description                          |
+| ------------------ | ------------------------------------ |
+| `pnpm dev`         | Start in development mode with watch |
+| `pnpm start:prod`  | Start in production mode             |
+| `pnpm db:generate` | Generate Drizzle migrations          |
+| `pnpm db:migrate`  | Run database migrations              |
+| `pnpm db:studio`   | Open Drizzle Studio GUI              |
+| `pnpm test`        | Run unit tests                       |
+| `pnpm test:e2e`    | Run end-to-end tests                 |
+| `pnpm test:cov`    | Run tests with coverage              |
+| `pnpm lint`        | Lint the codebase                    |
+
+## Architecture
+
 ```
+Client (Browser)
+    │
+    ├── REST API (/api/v1/*)
+    │       │
+    │       └── NestJS Controllers → Services → Drizzle ORM → PostgreSQL
+    │
+    └── WebSocket (Socket.IO)
+            │
+            ├── Redis Adapter (horizontal scaling)
+            ├── Messaging (rooms, typing, reactions, read receipts)
+            ├── Presence (online/offline tracking)
+            └── Call Signaling (WebRTC SDP + ICE)
+                    │
+                    └── Coturn TURN Server (NAT traversal)
 
-## Compile and run the project
-
-```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+Infrastructure:
+    ├── PostgreSQL — persistent data
+    ├── Redis — sessions, socket tracking, presence, call state
+    └── Coturn — TURN/STUN for WebRTC
 ```
-
-## Run tests
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
